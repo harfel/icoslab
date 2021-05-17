@@ -33,10 +33,11 @@ class Assay:
 
     def __init__(self, path, split=True):
         def parse_time(string):
-            match = re.match(r'Cycle (.*) \((.*) min( (.*) s)?\)', string)
-            mins = int(match.group(2))
-            secs = int(match.group(4)) if match.group(4) else 0
-            return mins + secs/60
+            match = re.match(r'Cycle (.*) \((.* h)?( .* min)?( .* s)?\)', string)
+            hrs = int(match.group(2).split()[0]) if match.group(2) else 0
+            mins = int(match.group(3).split()[0]) if match.group(3) else 0
+            secs = int(match.group(4).split()[0]) if match.group(4) else 0
+            return 60*hrs + mins + secs/60
 
         book = xlrd.open_workbook(path)
         ptcl = book.sheet_by_index(2)
@@ -66,8 +67,7 @@ class Assay:
         # split time into consecutive phases
         self.phase = [range(0, len(self.time))]
         if split:
-            # XXX deletes the last data point of every phase
-            mask = numpy.diff(self.time) > self.cycle_time + 0.1/60
+            mask = numpy.diff(self.time) > self.cycle_time + 1
             mask = numpy.append(mask, False)
             self.time = numpy.ma.array(self.time)
             self.time[mask] = numpy.ma.masked
